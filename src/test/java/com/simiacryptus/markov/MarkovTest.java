@@ -47,7 +47,7 @@ public class MarkovTest
   
   public MarkovCoder getCoder()
   {
-    return new MarkovCoder1(3);
+    return new MarkovCoder2(3);
   }
 
   @SuppressWarnings("unchecked")
@@ -104,8 +104,16 @@ public class MarkovTest
       
       final byte[] compressedMarkov = MarkovTest.this.getCoder().encode(
           dictionary);
-      System.out.println(String.format(
-          "Markov chain compressed to %s bytes", compressedMarkov.length));
+      System.out.print(String.format(
+          "Markov chain compressed to %s bytes...", compressedMarkov.length));
+      
+      final MarkovModel<Character> dictionary2 = MarkovTest.this.getCoder()
+          .decodeModel(compressedMarkov);
+      
+      MarkovTest.this.getCoder().verify(dictionary2, text.getBytes(), byteArray);
+      System.out.println(String.format("verified markov tree encoding!"));
+
+      
     }
     catch (final IOException e)
     {
