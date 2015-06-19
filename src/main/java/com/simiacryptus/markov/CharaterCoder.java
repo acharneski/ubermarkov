@@ -4,7 +4,7 @@ import com.simiacryptus.binary.Bits;
 
 public class CharaterCoder
 {
-  public final int bitLength = 16;
+  public final int       bitLength = 16;
   public final Character nullValue = Character.valueOf('\0');
   
   public Character fromBits(final Bits bits)
@@ -19,7 +19,7 @@ public class CharaterCoder
   {
     final char primitive = object.charValue();
     final Bits bits = new Bits(primitive, this.bitLength);
-    assert object.toString().equals(fromBits(bits).toString());
+    assert object.toString().equals(this.fromBits(bits).toString());
     return bits;
   }
   

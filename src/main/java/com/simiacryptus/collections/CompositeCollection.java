@@ -1,7 +1,5 @@
 package com.simiacryptus.collections;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -12,48 +10,48 @@ import com.simiacryptus.lang.NotImplementedException;
 public class CompositeCollection<T> implements Collection<T>
 {
   private final Collection<T>[] children;
-
+  
   public CompositeCollection(final Collection<T>... inputs)
   {
     this.children = inputs;
   }
-
+  
   @Override
   public boolean add(final T e)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean addAll(final Collection<? extends T> c)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public void clear()
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean contains(final Object o)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean containsAll(final Collection<?> c)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean isEmpty()
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public Iterator<T> iterator()
   {
@@ -65,25 +63,25 @@ public class CompositeCollection<T> implements Collection<T>
     }
     return Iterators.concat(inputs);
   }
-
+  
   @Override
   public boolean remove(final Object o)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean removeAll(final Collection<?> c)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public boolean retainAll(final Collection<?> c)
   {
     throw new NotImplementedException();
   }
-
+  
   @Override
   public int size()
   {
@@ -94,7 +92,7 @@ public class CompositeCollection<T> implements Collection<T>
     }
     return size;
   }
-
+  
   @Override
   public Object[] toArray()
   {
@@ -106,18 +104,10 @@ public class CompositeCollection<T> implements Collection<T>
     }
     return array;
   }
-
-  @SuppressWarnings("unchecked")
+  
   @Override
   public <U> U[] toArray(final U[] a)
   {
-    new ArrayList<Object>().toArray(new Object[] {});
-    final U[] array = (U[]) Arrays.copyOf(a, size(), a.getClass());
-    int index = 0;
-    for (final T i : this)
-    {
-      array[index++] = (U) i;
-    }
-    return array;
+    throw new NotImplementedException();
   }
 }

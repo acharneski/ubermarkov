@@ -1,4 +1,4 @@
-package com.simiacryptus.binary;
+package com.simiacryptus;
 
 import java.io.IOException;
 import java.util.Random;

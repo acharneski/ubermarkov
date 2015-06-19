@@ -2,14 +2,14 @@ package com.simiacryptus.math;
 
 import java.util.Random;
 
-import com.google.common.base.Function;
+import com.simiacryptus.lang.Function;
 
 public class MonteCarloIntegrator
 {
-  public Function<double[], Double> function;
-  public Random random = new Random();
+  public int        sampleCount = 1000;
+  public Function<double[],Double>   function;
   public double[][] range;
-  public int sampleCount = 1000;
+  public Random     random      = new Random();
   
   public double[] getNextPoint()
   {
@@ -23,7 +23,8 @@ public class MonteCarloIntegrator
     for (int dimension = 0; dimension < this.range.length; dimension++)
     {
       final double[] dimRange = this.range[dimension];
-      point[dimension] = dimRange[0] + this.random.nextDouble() * (dimRange[1] - dimRange[0]);
+      point[dimension] = dimRange[0] + this.random.nextDouble()
+          * (dimRange[1] - dimRange[0]);
     }
   }
   
@@ -46,7 +47,7 @@ public class MonteCarloIntegrator
       this.getNextPoint(point);
       sum += this.function.apply(point);
     }
-    return getVolume() * sum / this.sampleCount;
+    return this.getVolume() * sum / this.sampleCount;
   }
   
 }

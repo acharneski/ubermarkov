@@ -17,11 +17,11 @@ public class StreamTest
 {
   public static enum Checks
   {
-    CheckFour, CheckOne, CheckThree, CheckTwo;
+    CheckOne, CheckTwo, CheckThree, CheckFour;
   }
-
+  
   SCRandom random = new SCRandom();
-
+  
   @Test
   public void streamEnumChecks() throws IOException
   {
@@ -32,18 +32,19 @@ public class StreamTest
       out.write(this.random.choose(Checks.values()));
     }
     out.flush();
-
+    
     final byte[] serializedData = outBuffer.toByteArray();
     this.random.reset();
-
-    final ByteArrayInputStream inBuffer = new ByteArrayInputStream(serializedData);
+    
+    final ByteArrayInputStream inBuffer = new ByteArrayInputStream(
+        serializedData);
     final BitInputStream in = new BitInputStream(inBuffer);
     for (int i = 0; i < 100; i++)
     {
       in.expect(this.random.choose(Checks.values()));
     }
   };
-
+  
   @Test
   public void streamTest() throws IOException
   {
@@ -54,11 +55,12 @@ public class StreamTest
       out.write(this.random.nextBits());
     }
     out.flush();
-
+    
     final byte[] serializedData = outBuffer.toByteArray();
     this.random.reset();
-
-    final ByteArrayInputStream inBuffer = new ByteArrayInputStream(serializedData);
+    
+    final ByteArrayInputStream inBuffer = new ByteArrayInputStream(
+        serializedData);
     final BitInputStream in = new BitInputStream(inBuffer);
     for (int i = 0; i < 100; i++)
     {
@@ -66,5 +68,5 @@ public class StreamTest
       Assert.assertEquals(nextBits, in.read(nextBits.bitLength));
     }
   }
-
+  
 }

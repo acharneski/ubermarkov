@@ -19,8 +19,7 @@ public final class RemoveMixedTerminalCounts extends MarkovVisitor<Character>
   @Override
   public void visit(final MarkovNode<Character> node)
   {
-    if (node.getChildren().size() == 0)
-      return;
+    if (node.getChildren().size() == 0) { return; }
     int value = 0;
     for (final MarkovNode<Character> child : node.getChildren().values())
     {

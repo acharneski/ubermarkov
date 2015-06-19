@@ -2,6 +2,9 @@ package com.simiacryptus.markov;
 
 import org.junit.Test;
 
+import com.simiacryptus.markov.MarkovCoder;
+import com.simiacryptus.markov.MarkovCoder2;
+
 public class MarkovTest2 extends MarkovTest
 {
   

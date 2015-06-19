@@ -31,7 +31,7 @@ public class MarkovCoder3 extends MarkovCoder1
   @Override
   public MarkovModel<Character> decodeModel(final byte[] bytes) throws IOException
   {
-    final MarkovModel<Character> dictionary = newModel();
+    final MarkovModel<Character> dictionary = this.newModel();
     final BitInputStream bitStream = BitInputStream.toBitStream(bytes);
     
     for (int level = 0; level < dictionary.depth; level++)
@@ -41,9 +41,11 @@ public class MarkovCoder3 extends MarkovCoder1
         final MarkovNode<Character> fallback = node.getFallback();
         if (null == fallback || node == fallback)
         {
-          final CountTreeBitsCollection bitsCollection = new CountTreeBitsCollection(dictionary.charCoder.bitLength);
+          final CountTreeBitsCollection bitsCollection = new CountTreeBitsCollection(
+              dictionary.charCoder.bitLength);
           bitsCollection.read(bitStream);
-          for (final Entry<Bits, Integer> e : bitsCollection.getMap().entrySet())
+          for (final Entry<Bits, Integer> e : bitsCollection.getMap()
+              .entrySet())
           {
             final Bits bits = e.getKey();
             assert bits.bitLength == dictionary.charCoder.bitLength;
@@ -51,12 +53,17 @@ public class MarkovCoder3 extends MarkovCoder1
             node.add(new MarkovPath<Character>(character), e.getValue());
           }
           node.setWeight(1);
-        } else
+        }
+        else
         {
-          final HammingCode<Character> hammingCode = getRemainingCode(fallback);
-          final CountTreeBitsCollection bitsCollection = getCodeCollection(hammingCode);
-          bitsCollection.read(bitStream, (int) bitStream.readBoundedLong(hammingCode.codeSize() + 1));
-          for (final Entry<Bits, Integer> e : bitsCollection.getMap().entrySet())
+          final HammingCode<Character> hammingCode = this
+              .getRemainingCode(fallback);
+          final CountTreeBitsCollection bitsCollection = this
+              .getCodeCollection(hammingCode);
+          bitsCollection.read(bitStream,
+              (int) bitStream.readBoundedLong(hammingCode.codeSize() + 1));
+          for (final Entry<Bits, Integer> e : bitsCollection.getMap()
+              .entrySet())
           {
             final Bits bits = e.getKey();
             final Character character = hammingCode.decode(bits).getValue();
@@ -72,8 +79,8 @@ public class MarkovCoder3 extends MarkovCoder1
   @Override
   public byte[] encode(final MarkovModel<Character> dictionary) throws IOException
   {
-    normalize(dictionary);
-    final MarkovModel<Character> modelCopy = new MarkovModel<Character>(dictionary.depth);
+    this.normalize(dictionary);
+    MarkovModel<Character> modelCopy = new MarkovModel<Character>(dictionary.depth);
     final MarkovNode<Character> copyChain = new DataNode<Character>(modelCopy);
     copyChain.setWeight(dictionary.root.getWeight());
     final ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
@@ -88,7 +95,8 @@ public class MarkovCoder3 extends MarkovCoder1
         if (null == fallback || fallback == node)
         {
           CountTreeBitsCollection bitsCollection;
-          bitsCollection = new CountTreeBitsCollection(dictionary.charCoder.bitLength);
+          bitsCollection = new CountTreeBitsCollection(
+              dictionary.charCoder.bitLength);
           for (final MarkovNode<Character> child : node.getChildren().values())
           {
             final Bits bits = dictionary.charCoder.toBits(child.getKey());
@@ -97,15 +105,18 @@ public class MarkovCoder3 extends MarkovCoder1
             copyChild.getChild(child.getKey()).setWeight(child.getWeight());
           }
           bitsCollection.write(out);
-        } else
+        }
+        else
         {
-          final MarkovNode<Character> fallback2 = copyChild.getFallback();
-          final HammingCode<Character> hammingCode = getRemainingCode(fallback2);
-          final CountTreeBitsCollection bitsCollection = getCodeCollection(hammingCode);
+          MarkovNode<Character> fallback2 = copyChild.getFallback();
+          final HammingCode<Character> hammingCode = this
+              .getRemainingCode(fallback2);
+          final CountTreeBitsCollection bitsCollection = this
+              .getCodeCollection(hammingCode);
           long sum = 0;
           for (final MarkovNode<Character> child : node.getChildren().values())
           {
-            final Character key = child.getKey();
+            Character key = child.getKey();
             final Bits bits = hammingCode.encode(key);
             bitsCollection.add(bits, child.getWeight());
             copyChild.getChild(key).setWeight(child.getWeight());
@@ -123,24 +134,26 @@ public class MarkovCoder3 extends MarkovCoder1
     return bytes;
   }
   
-  protected CountTreeBitsCollection getCodeCollection(final HammingCode<Character> hammingCode)
+  protected CountTreeBitsCollection getCodeCollection(
+      final HammingCode<Character> hammingCode)
   {
-    final CountTreeBitsCollection bitsCollection = hammingCode.new HammingCodeCollection()
-    {
+    final CountTreeBitsCollection bitsCollection = hammingCode.new HammingCodeCollection() {
       
       @Override
-      protected long readZeroBranchSize(final BitInputStream in, final long total, final Bits code) throws IOException
+      protected long readZeroBranchSize(final BitInputStream in,
+          final long total, final Bits code) throws IOException
       {
-        if (0 == total)
-          return 0;
+        if (0 == total) { return 0; }
         final long value;
-        if (CountTreeBitsCollection.SERIALIZATION_CHECKS)
+        if (SERIALIZATION_CHECKS)
         {
           in.expect(SerializationChecks.BeforeCount);
         }
         
-        final SortedMap<Bits, Character> zeroCodes = hammingCode.getCodes(code.concatenate(Bits.ZERO));
-        final SortedMap<Bits, Character> oneCodes = hammingCode.getCodes(code.concatenate(Bits.ONE));
+        final SortedMap<Bits, Character> zeroCodes = hammingCode.getCodes(code
+            .concatenate(Bits.ZERO));
+        final SortedMap<Bits, Character> oneCodes = hammingCode.getCodes(code
+            .concatenate(Bits.ONE));
         long max = 0;
         long min = total;
         for (final Entry<Bits, Character> e : zeroCodes.entrySet())
@@ -166,13 +179,14 @@ public class MarkovCoder3 extends MarkovCoder1
           Gaussian gaussian = Gaussian.fromBinomial(0.5, total);
           gaussian = new Gaussian(gaussian.mean - min, gaussian.stdDev);
           value = gaussian.decode(in, max - min) + min;
-        } else
+        }
+        else
         {
           assert max == min;
           value = max;
         }
         
-        if (CountTreeBitsCollection.SERIALIZATION_CHECKS)
+        if (SERIALIZATION_CHECKS)
         {
           in.expect(SerializationChecks.AfterCount);
         }
@@ -180,17 +194,21 @@ public class MarkovCoder3 extends MarkovCoder1
       }
       
       @Override
-      protected void writeZeroBranchSize(final BitOutputStream out, final long value, final long total, final Bits code) throws IOException
+      protected void writeZeroBranchSize(final BitOutputStream out,
+          final long value, final long total, final Bits code)
+          throws IOException
       {
         assert 0 <= value;
         assert total >= value;
-        if (CountTreeBitsCollection.SERIALIZATION_CHECKS)
+        if (SERIALIZATION_CHECKS)
         {
           out.write(SerializationChecks.BeforeCount);
         }
         
-        final SortedMap<Bits, Character> zeroCodes = hammingCode.getCodes(code.concatenate(Bits.ZERO));
-        final SortedMap<Bits, Character> oneCodes = hammingCode.getCodes(code.concatenate(Bits.ONE));
+        final SortedMap<Bits, Character> zeroCodes = hammingCode.getCodes(code
+            .concatenate(Bits.ZERO));
+        final SortedMap<Bits, Character> oneCodes = hammingCode.getCodes(code
+            .concatenate(Bits.ONE));
         long max = 0;
         long min = total;
         for (final Entry<Bits, Character> e : zeroCodes.entrySet())
@@ -215,12 +233,13 @@ public class MarkovCoder3 extends MarkovCoder1
           Gaussian gaussian = Gaussian.fromBinomial(0.5, total);
           gaussian = new Gaussian(gaussian.mean - min, gaussian.stdDev);
           gaussian.encode(out, value - min, max - min);
-        } else
+        }
+        else
         {
           assert max == min;
         }
         
-        if (CountTreeBitsCollection.SERIALIZATION_CHECKS)
+        if (SERIALIZATION_CHECKS)
         {
           out.write(SerializationChecks.AfterCount);
         }
@@ -230,27 +249,44 @@ public class MarkovCoder3 extends MarkovCoder1
     return bitsCollection;
   }
   
-  protected HammingCode<Character> getRemainingCode(final MarkovNode<Character> fallback)
+  protected HammingCode<Character> getRemainingCode(
+      final MarkovNode<Character> fallback)
   {
-    final TreeMap<Character, AtomicInteger> symbolCounts = new TreeMap<Character, AtomicInteger>(Maps.transformEntries(fallback.getChildren(),
-        (EntryTransformer<Character, MarkovNode<Character>, AtomicInteger>) (key, value) -> new AtomicInteger(value.getWeight())));
-    final NavigableMap<Character, HammingSymbol<Character>> symbolMap = Maps.transformEntries(symbolCounts,
-        (EntryTransformer<Character, AtomicInteger, HammingSymbol<Character>>) (key, value) -> new HammingSymbol<Character>(value.get(), key));
+    final TreeMap<Character, AtomicInteger> symbolCounts = new TreeMap<Character, AtomicInteger>(
+        Maps.transformEntries(
+            fallback.getChildren(),
+            new EntryTransformer<Character, MarkovNode<Character>, AtomicInteger>() {
+              @Override
+              public AtomicInteger transformEntry(final Character key,
+                  final MarkovNode<Character> value)
+              {
+                return new AtomicInteger(value.getWeight());
+              }
+            }));
+    final NavigableMap<Character, HammingSymbol<Character>> symbolMap = Maps
+        .transformEntries(
+            symbolCounts,
+            new EntryTransformer<Character, AtomicInteger, HammingSymbol<Character>>() {
+              @Override
+              public HammingSymbol<Character> transformEntry(
+                  final Character key, final AtomicInteger value)
+              {
+                return new HammingSymbol<Character>(value.get(), key);
+              }
+            });
     return new HammingCode<Character>(symbolMap.values());
   }
   
   @Override
   protected boolean normalize(final MarkovModel<Character> dictionary)
   {
-    if (dictionary.isNormalized)
-      return false;
+    if (dictionary.isNormalized) { return false; }
     dictionary.isNormalized = true;
     final VerifyMarkovChainProperties verifyMarkovChainProperties = new VerifyMarkovChainProperties();
     verifyMarkovChainProperties.verifyCountSums = false;
     verifyMarkovChainProperties.visitUp(dictionary.root);
     RemoveZeroTerminals.run(dictionary.root);
-    new MarkovVisitor<Character>()
-    {
+    new MarkovVisitor<Character>() {
       @Override
       public void visit(final MarkovNode<Character> node)
       {
@@ -261,12 +297,18 @@ public class MarkovCoder3 extends MarkovCoder1
   }
   
   @Override
-  protected boolean verify(final MarkovModel<Character> dictionary, final byte[] bytes) throws IOException
+  protected boolean verify(final MarkovModel<Character> dictionary, final byte[] bytes)
+      throws IOException
   {
-    final MarkovModel<Character> decompress = decodeModel(bytes);
-    if (dictionary.root.isEquivalent(decompress.root))
+    final MarkovModel<Character> decompress = this.decodeModel(bytes);
+    if(dictionary.root.isEquivalent(decompress.root))
+    {
       return true;
-    else return false;
+    }
+    else
+    {
+      return false;
+    }
   }
   
 }

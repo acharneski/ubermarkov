@@ -21,7 +21,7 @@ public final class RemoveZeroTerminals extends MarkovVisitor<Character>
   @Override
   public void visit(final MarkovNode<Character> node)
   {
-    final TreeMap<Character, MarkovNode<Character>> children = new TreeMap<Character, MarkovNode<Character>>(node.getChildren());
+    TreeMap<Character, MarkovNode<Character>> children = new TreeMap<Character, MarkovNode<Character>>(node.getChildren());
     for (final MarkovNode<Character> child : children.values())
     {
       if (child.getWeight() == 0)

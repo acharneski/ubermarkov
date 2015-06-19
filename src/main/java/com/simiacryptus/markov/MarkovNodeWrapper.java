@@ -6,92 +6,92 @@ public class MarkovNodeWrapper<T extends Comparable<T>> extends MarkovNode<T>
 {
   private final MarkovNode<T> input;
   
-  public MarkovNodeWrapper(final MarkovNode<T> input)
+  public MarkovNodeWrapper(MarkovNode<T> input)
   {
     this.input = input;
   }
   
   @Override
-  public MarkovNode<T> getChild(final T key)
+  public MarkovNode<T> getChild(T key)
   {
-    return this.input.getChild(key);
+    return input.getChild(key);
   }
   
   @Override
   public NavigableMap<T, ? extends MarkovNode<T>> getChildren()
   {
-    return this.input.getChildren();
-  }
-  
-  @Override
-  public MarkovNode<T> getFallback()
-  {
-    return this.input.getFallback();
-  }
-  
-  @Override
-  public NavigableMap<T, ? extends MarkovNode<T>> getFallbackChildren()
-  {
-    return this.input.getFallbackChildren();
-  }
-  
-  @Override
-  public T getKey()
-  {
-    return this.input.getKey();
-  }
-  
-  @Override
-  public MarkovModel<T> getModel()
-  {
-    return this.input.getModel();
-  }
-  
-  @Override
-  public int getNodeCount()
-  {
-    return this.input.getNodeCount();
-  }
-  
-  @Override
-  public MarkovNode<T> getParent()
-  {
-    return this.input.getParent();
-  }
-  
-  @Override
-  public MarkovPath<T> getPath()
-  {
-    return this.input.getPath();
+    return input.getChildren();
   }
   
   @Override
   public int getWeight()
   {
-    return this.input.getWeight();
+    return input.getWeight();
   }
   
   @Override
-  public void incrementWeight(final int delta)
+  public MarkovNode<T> getFallback()
   {
-    this.input.incrementWeight(delta);
+    return input.getFallback();
   }
   
   @Override
-  public boolean isEquivalent(final MarkovNode<T> otherNode)
+  public NavigableMap<T, ? extends MarkovNode<T>> getFallbackChildren()
   {
-    return this.input.isEquivalent(otherNode);
+    return input.getFallbackChildren();
   }
   
   @Override
-  public MarkovNode<T> removeChild(final MarkovNode<T> child)
+  public T getKey()
   {
-    return this.input.removeChild(child);
+    return input.getKey();
   }
   
   @Override
-  public void setWeight(final int value)
+  public MarkovModel<T> getModel()
   {
-    this.input.setWeight(value);
+    return input.getModel();
+  }
+  
+  @Override
+  public MarkovNode<T> getParent()
+  {
+    return input.getParent();
+  }
+  
+  @Override
+  public void incrementWeight(int delta)
+  {
+    input.incrementWeight(delta);
+  }
+  
+  @Override
+  public MarkovNode<T> removeChild(MarkovNode<T> child)
+  {
+    return input.removeChild(child);
+  }
+  
+  @Override
+  public void setWeight(int value)
+  {
+    input.setWeight(value);
+  }
+  
+  @Override
+  public int getNodeCount()
+  {
+    return input.getNodeCount();
+  }
+  
+  @Override
+  public MarkovPath<T> getPath()
+  {
+    return input.getPath();
+  }
+  
+  @Override
+  public boolean isEquivalent(MarkovNode<T> otherNode)
+  {
+    return input.isEquivalent(otherNode);
   }
 }

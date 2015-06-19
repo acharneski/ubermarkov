@@ -23,33 +23,34 @@ public class HammingCode<T extends Comparable<T>>
     {
       super();
     }
-
+    
     public HammingCodeCollection(final BitInputStream data) throws IOException
     {
       super(data);
     }
-
+    
     public HammingCodeCollection(final byte[] data) throws IOException
     {
       super(data);
     }
-
+    
     @Override
     public CodeType getType(final Bits bits)
     {
       final Entry<Bits, T> code = HammingCode.this.decode(bits);
-      if (null == code) return CodeType.Prefix;
+      if (null == code) { return CodeType.Prefix; }
       assert bits.equals(code.getKey());
       return CodeType.Terminal;
     }
   }
-
-  private static class SubCode<X extends Comparable<X>> implements Comparable<SubCode<X>>
+  
+  private static class SubCode<X extends Comparable<X>> implements
+      Comparable<SubCode<X>>
   {
+    final long             count;
     final TreeMap<Bits, X> codes;
-    final long count;
     final TreeMap<X, Bits> index;
-
+    
     public SubCode(final long count, final X item)
     {
       super();
@@ -59,7 +60,7 @@ public class HammingCode<T extends Comparable<T>>
       this.codes.put(Bits.NULL, item);
       this.index.put(item, Bits.NULL);
     }
-
+    
     public SubCode(final SubCode<X> zero, final SubCode<X> one)
     {
       super();
@@ -81,42 +82,43 @@ public class HammingCode<T extends Comparable<T>>
         this.assertNull(this.index.put(e.getValue(), code));
       }
     }
-
+    
     private void assertNull(final Object obj)
     {
       assert null == obj;
     }
-
+    
     @Override
     public int compareTo(final SubCode<X> o)
     {
-      if (this.count < o.count) return -1;
-      if (this.count > o.count) return 1;
+      if (this.count < o.count) { return -1; }
+      if (this.count > o.count) { return 1; }
       final int compareTo = this.index.firstKey().compareTo(o.index.firstKey());
       assert 0 != compareTo;
       return compareTo;
     }
   }
-
+  
   public static boolean isPrefixFreeCode(final Set<Bits> keySet)
   {
     final TreeSet<Bits> check = new TreeSet<Bits>();
     for (final Bits code : keySet)
     {
       final Bits ceiling = check.ceiling(code);
-      if (null != ceiling && (ceiling.startsWith(code) || code.startsWith(ceiling))) return false;
+      if (null != ceiling
+          && (ceiling.startsWith(code) || code.startsWith(ceiling))) { return false; }
       final Bits floor = check.floor(code);
-      if (null != floor && (floor.startsWith(code) || code.startsWith(floor))) return false;
+      if (null != floor && (floor.startsWith(code) || code.startsWith(floor))) { return false; }
       check.add(code);
     }
     return true;
   }
-
-  protected final TreeMap<Bits, T> forwardIndex = new TreeMap<Bits, T>();
-  protected final HashMap<T, Bits> reverseIndex = new HashMap<T, Bits>();
+  
+  protected final TreeMap<Bits, T>    forwardIndex = new TreeMap<Bits, T>();
+  protected final HashMap<T, Bits>    reverseIndex = new HashMap<T, Bits>();
+  protected final HashMap<T, Integer> weights      = new HashMap<T, Integer>();
   protected final long totalWeight;
-  protected final HashMap<T, Integer> weights = new HashMap<T, Integer>();
-
+  
   public HammingCode(final Collection<HammingSymbol<T>> symbols)
   {
     if (0 < symbols.size())
@@ -136,21 +138,21 @@ public class HammingCode<T extends Comparable<T>>
       final SubCode<T> root = assemblySet.first();
       this.forwardIndex.putAll(root.codes);
       this.reverseIndex.putAll(root.index);
-      this.totalWeight = root.count;
+      totalWeight = root.count;
     }
     else
     {
-      this.totalWeight = 0;
+      totalWeight = 0;
     }
     assert this.verifyIndexes();
     assert this.forwardIndex.size() == symbols.size();
   }
-
+  
   public int codeSize()
   {
     return this.forwardIndex.size();
   }
-
+  
   public T decode(final BitInputStream in) throws IOException
   {
     Bits remainder = in.readAhead(0);
@@ -163,10 +165,10 @@ public class HammingCode<T extends Comparable<T>>
     in.read(entry.getKey().bitLength);
     return entry.getValue();
   }
-
+  
   public Entry<Bits, T> decode(final Bits data)
   {
-    if (null == data) throw new IllegalArgumentException();
+    if (null == data) { throw new IllegalArgumentException(); }
     Entry<Bits, T> entry = this.forwardIndex.floorEntry(data);
     // TestUtil.openJson(new JSONObject(forwardIndex));
     if (entry != null && !data.startsWith(entry.getKey()))
@@ -176,39 +178,59 @@ public class HammingCode<T extends Comparable<T>>
     // assert(null != entry || verifyIndexes());
     return entry;
   }
-
+  
   public Bits encode(final T key)
   {
     final Bits bits = this.reverseIndex.get(key);
     assert null != bits || this.verifyIndexes();
     return bits;
   }
-
+  
   public SortedMap<Bits, T> getCodes(final Bits fromKey)
   {
     final Bits next = fromKey.next();
-    final SortedMap<Bits, T> subMap = null == next ? this.forwardIndex.tailMap(fromKey) : this.forwardIndex.subMap(fromKey, next);
+    final SortedMap<Bits, T> subMap = null == next ? this.forwardIndex
+        .tailMap(fromKey) : this.forwardIndex.subMap(fromKey, next);
     return subMap;
   }
-
+  
   public CountTreeBitsCollection getSetEncoder()
   {
     return new HammingCodeCollection();
   }
-
-  public CountTreeBitsCollection getSetEncoder(final BitInputStream data) throws IOException
+  
+  public CountTreeBitsCollection getSetEncoder(final BitInputStream data)
+      throws IOException
   {
     return new HammingCodeCollection(data);
   }
-
-  public CountTreeBitsCollection getSetEncoder(final byte[] data) throws IOException
+  
+  public CountTreeBitsCollection getSetEncoder(final byte[] data)
+      throws IOException
   {
     return new HammingCodeCollection(data);
   }
-
+  
   public Map<T, Integer> getWeights()
   {
     return Collections.unmodifiableMap(this.weights);
+  }
+  
+  public boolean verifyIndexes()
+  {
+    if (!isPrefixFreeCode(this.forwardIndex.keySet())) { return false; }
+    for (final Entry<Bits, T> e : this.forwardIndex.entrySet())
+    {
+      if (!e.getKey().equals(this.reverseIndex.get(e.getValue()))) { return false; }
+      if (!e.getValue().equals(this.forwardIndex.get(e.getKey()))) { return false; }
+    }
+    for (final Entry<T, Bits> e : this.reverseIndex.entrySet())
+    {
+      if (!e.getKey().equals(this.forwardIndex.get(e.getValue()))) { return false; }
+      if (!e.getValue().equals(this.reverseIndex.get(e.getKey()))) { return false; }
+    }
+    if (this.reverseIndex.size() != this.forwardIndex.size()) { return false; }
+    return true;
   }
 
   public int totalWeight()
@@ -216,22 +238,5 @@ public class HammingCode<T extends Comparable<T>>
     // TODO Auto-generated method stub
     return 0;
   }
-
-  public boolean verifyIndexes()
-  {
-    if (!HammingCode.isPrefixFreeCode(this.forwardIndex.keySet())) return false;
-    for (final Entry<Bits, T> e : this.forwardIndex.entrySet())
-    {
-      if (!e.getKey().equals(this.reverseIndex.get(e.getValue()))) return false;
-      if (!e.getValue().equals(this.forwardIndex.get(e.getKey()))) return false;
-    }
-    for (final Entry<T, Bits> e : this.reverseIndex.entrySet())
-    {
-      if (!e.getKey().equals(this.forwardIndex.get(e.getValue()))) return false;
-      if (!e.getValue().equals(this.reverseIndex.get(e.getKey()))) return false;
-    }
-    if (this.reverseIndex.size() != this.forwardIndex.size()) return false;
-    return true;
-  }
-
+  
 }

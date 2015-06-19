@@ -20,35 +20,38 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.simiacryptus.lang.LOG;
+import com.simiacryptus.markov.MarkovCoder;
+import com.simiacryptus.markov.MarkovCoder2;
 
 public class MarkovTestWiki extends MarkovTest
 {
   
   static final boolean SERIALIZATION_CHECKS = false;
   
-  public static int extractPages(final File root, final int pageLimit) throws FileNotFoundException, IOException
+  public static int extractPages(final File root, final int pageLimit)
+      throws FileNotFoundException, IOException
   {
     // From http://dumps.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles-multistream.xml.bz2
     final AtomicInteger hitPageLimit = new AtomicInteger(-1);
-    final InputStream in = new BZip2CompressorInputStream(new FileInputStream("..\\enwiki-latest-pages-articles-multistream.xml.bz2"), true);
+    final InputStream in = new BZip2CompressorInputStream(new FileInputStream(
+        "..\\enwiki-latest-pages-articles-multistream.xml.bz2"), true);
     try
     {
       final SAXParserFactory spf = SAXParserFactory.newInstance();
       spf.setNamespaceAware(false);
       final SAXParser saxParser = spf.newSAXParser();
-      saxParser.parse(in, new DefaultHandler()
-      {
-        Stack<Map<String, AtomicInteger>> indexes = new Stack<Map<String, AtomicInteger>>();
-        StringBuilder nodeString = new StringBuilder();
-        private int pages = 0;
-        Stack<String> prefix = new Stack<String>();
-        private String title;
+      saxParser.parse(in, new DefaultHandler() {
+        Stack<String>                     prefix     = new Stack<String>();
+        Stack<Map<String, AtomicInteger>> indexes    = new Stack<Map<String, AtomicInteger>>();
+        private String                    title;
+        private int                       pages      = 0;
+        private boolean                   verbose    = false;
         
-        private boolean verbose = false;
+        StringBuilder                     nodeString = new StringBuilder();
         
         @Override
-        public void characters(final char[] ch, final int start, final int length) throws SAXException
+        public void characters(final char[] ch, final int start,
+            final int length) throws SAXException
         {
           this.nodeString.append(ch, start, length);
           super.characters(ch, start, length);
@@ -61,7 +64,8 @@ public class MarkovTestWiki extends MarkovTest
         }
         
         @Override
-        public void endElement(final String uri, final String localName, final String qName) throws SAXException
+        public void endElement(final String uri, final String localName,
+            final String qName) throws SAXException
         {
           final String pop = this.prefix.pop();
           this.indexes.pop();
@@ -73,10 +77,12 @@ public class MarkovTestWiki extends MarkovTest
           if ("page".equals(qName))
           {
             this.title = null;
-          } else if ("title".equals(qName))
+          }
+          else if ("title".equals(qName))
           {
             this.title = text;
-          } else if ("text".equals(qName))
+          }
+          else if ("text".equals(qName))
           {
             final File file = new File(root, this.title + ".txt");
             try
@@ -85,7 +91,8 @@ public class MarkovTestWiki extends MarkovTest
               final FileWriter out = new FileWriter(file);
               out.write(text);
               out.close();
-            } catch (final IOException e)
+            }
+            catch (final IOException e)
             {
               throw new RuntimeException(e);
             }
@@ -98,13 +105,15 @@ public class MarkovTestWiki extends MarkovTest
           
           if (this.verbose)
           {
-            text = this.nodeString.toString().trim().replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r");
+            text = this.nodeString.toString().trim().replaceAll("\n", "\\\\n")
+                .replaceAll("\r", "\\\\r");
             final int maxLength = 120;
             if (text.length() > maxLength)
             {
               text = text.substring(0, maxLength) + "...";
             }
-            LOG.d("%s (%s bytes): %s", pop, length, text);
+            System.out.println(String.format("%s (%s bytes): %s", pop, length,
+                text));
           }
           super.endElement(uri, localName, qName);
         }
@@ -116,7 +125,9 @@ public class MarkovTestWiki extends MarkovTest
         }
         
         @Override
-        public void startElement(final String uri, final String localName, final String qName, final Attributes attributes) throws SAXException
+        public void startElement(final String uri, final String localName,
+            final String qName, final Attributes attributes)
+            throws SAXException
         {
           int idx;
           if (0 < this.indexes.size())
@@ -129,11 +140,13 @@ public class MarkovTestWiki extends MarkovTest
               index.put(qName, cnt);
             }
             idx = cnt.incrementAndGet();
-          } else
+          }
+          else
           {
             idx = 0;
           }
-          String path = 0 == this.prefix.size() ? qName : this.prefix.peek() + "/" + qName;
+          String path = 0 == this.prefix.size() ? qName : this.prefix.peek()
+              + "/" + qName;
           if (0 < idx)
           {
             path += "[" + idx + "]";
@@ -144,13 +157,20 @@ public class MarkovTestWiki extends MarkovTest
         }
         
       }, null);
-    } catch (final Exception e)
+    }
+    catch (final Exception e)
     {
       final int i = hitPageLimit.get();
       if (-1 < i)
+      {
         return i;
-      else throw new RuntimeException(e);
-    } finally
+      }
+      else
+      {
+        throw new RuntimeException(e);
+      }
+    }
+    finally
     {
       in.close();
     }
@@ -163,7 +183,7 @@ public class MarkovTestWiki extends MarkovTest
     ClassLoader.getSystemClassLoader().setDefaultAssertionStatus(false);
     this.root = new File("..\\enwiki-temp");
     this.root.mkdirs();
-    MarkovTestWiki.extractPages(this.root, 1000);
+    extractPages(this.root, 1000);
   }
   
   @Override

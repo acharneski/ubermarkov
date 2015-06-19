@@ -11,32 +11,32 @@ import com.google.common.collect.Maps.EntryTransformer;
 
 public class CountCollection<T, C extends Map<T, AtomicInteger>>
 {
-
+  
   protected final C map;
-
+  
   public CountCollection(final C collection)
   {
     super();
     this.map = collection;
   }
-
+  
   public int add(final T bits)
   {
     return this.getCounter(bits).incrementAndGet();
   }
-
+  
   public int add(final T bits, final int count)
   {
     return this.getCounter(bits).addAndGet(count);
   }
-
+  
   protected int count(final T key)
   {
     final AtomicInteger counter = this.map.get(key);
-    if (null == counter) return 0;
+    if (null == counter) { return 0; }
     return counter.get();
   }
-
+  
   private AtomicInteger getCounter(final T bits)
   {
     AtomicInteger counter = this.map.get(bits);
@@ -47,7 +47,7 @@ public class CountCollection<T, C extends Map<T, AtomicInteger>>
     }
     return counter;
   }
-
+  
   public List<T> getList()
   {
     final ArrayList<T> list = new ArrayList<T>();
@@ -60,10 +60,17 @@ public class CountCollection<T, C extends Map<T, AtomicInteger>>
     }
     return list;
   }
-
+  
   public Map<T, Integer> getMap()
   {
-    return Maps.transformEntries(this.map, (EntryTransformer<T, AtomicInteger, Integer>) (key, value) -> value.get());
+    return Maps.transformEntries(this.map,
+        new EntryTransformer<T, AtomicInteger, Integer>() {
+          @Override
+          public Integer transformEntry(final T key, final AtomicInteger value)
+          {
+            return value.get();
+          }
+        });
   }
-
+  
 }

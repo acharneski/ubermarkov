@@ -4,11 +4,11 @@ import java.util.List;
 
 public class MarkovModel<T extends Comparable<T>>
 {
-  final CharaterCoder charCoder = new CharaterCoder();
-  public boolean dedupPrefix = true;
-  final int depth;
-  boolean isNormalized = false;
-  final MarkovNode<T> root = new DataNode<T>(this);
+  final MarkovNode<T> root         = new DataNode<T>(this);
+  final CharaterCoder charCoder    = new CharaterCoder();
+  final int           depth;
+  boolean             isNormalized = false;
+  public boolean      dedupPrefix  = false;
   
   MarkovModel(final int depth)
   {
@@ -16,14 +16,14 @@ public class MarkovModel<T extends Comparable<T>>
     this.depth = depth;
   }
   
-  public void add(final List<T> sequence, final int value)
+  public void add(final List<T> sequence, long marker)
   {
-    this.root.add(new MarkovPath<T>(sequence), value);
+    root.add(new MarkovPath<T>(sequence), 1);
   }
   
-  public void add(final List<T> sequence, final long marker)
+  public void add(final List<T> sequence, final int value)
   {
-    this.root.add(new MarkovPath<T>(sequence), 1);
+    root.add(new MarkovPath<T>(sequence), value);
   }
   
 }

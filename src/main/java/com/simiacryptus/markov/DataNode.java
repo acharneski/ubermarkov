@@ -6,37 +6,22 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+import javax.annotation.Nullable;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
 public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
 {
   
-  private final TreeMap<T, DataNode<T>> children = new TreeMap<T, DataNode<T>>();
-  private volatile DataNode<T> fallback;
+  private int                           weight           = 0;
+  private int                           nodeCount        = 0;
+  private final MarkovPath<T>           path;
+  private final DataNode<T>           parent;
+  private volatile DataNode<T>          fallback;
+  private final TreeMap<T, DataNode<T>> children         = new TreeMap<T, DataNode<T>>();
   private final TreeMap<T, DataNode<T>> fallbackChildren = new TreeMap<T, DataNode<T>>();
-  private MarkovModel<T> model;
-  private int nodeCount = 0;
-  private final DataNode<T> parent;
-  private final MarkovPath<T> path;
-  private int weight = 0;
-  
-  protected DataNode(final DataNode<T> parent, final T key)
-  {
-    super();
-    assert null != parent;
-    assert null != key;
-    this.model = parent.getModel();
-    this.parent = parent;
-    
-    final List<T> list = null != parent ? new ArrayList<T>(parent.getPath().path) : new ArrayList<T>();
-    if (null != key)
-    {
-      list.add(key);
-    }
-    this.path = new MarkovPath<T>(list);
-    // initFallbackIndex();
-  }
+  private MarkovModel<T>                model;
   
   @SuppressWarnings("unchecked")
   DataNode(final MarkovModel<T> model)
@@ -47,15 +32,36 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
     this.path = new MarkovPath<T>();
   }
   
+  protected DataNode(final DataNode<T> parent, final T key)
+  {
+    super();
+    assert null != parent;
+    assert null != key;
+    this.model = parent.getModel();
+    this.parent = parent;
+    
+    final List<T> list = null != parent ? new ArrayList<T>(
+        parent.getPath().path) : new ArrayList<T>();
+    if (null != key)
+    {
+      list.add(key);
+    }
+    this.path = new MarkovPath<T>(list);
+    // initFallbackIndex();
+  }
+  
   protected void add(final MarkovNode<T> source)
   {
-    final NavigableMap<T, ? extends MarkovNode<T>> sourceChildren = source.getChildren();
+    final NavigableMap<T, ? extends MarkovNode<T>> sourceChildren = source
+        .getChildren();
     if (0 == sourceChildren.size())
     {
       this.incrementWeight(source.getWeight());
-    } else
+    }
+    else
     {
-      for (final Entry<T, ? extends MarkovNode<T>> e : sourceChildren.entrySet())
+      for (final Entry<T, ? extends MarkovNode<T>> e : sourceChildren
+          .entrySet())
       {
         final DataNode<T> targetChild = (DataNode<T>) this.newChild(e.getKey());
         final MarkovNode<T> sourceChild = e.getValue();
@@ -71,7 +77,8 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
       this.fallbackChildren.put(key, node);
       if (this.getModel().dedupPrefix && 1 == this.fallbackChildren.size())
       {
-        final DataNode<T> prefixedNode = this.fallbackChildren.values().iterator().next();
+        final DataNode<T> prefixedNode = this.fallbackChildren.values()
+            .iterator().next();
         prefixedNode.add(this);
       }
     }
@@ -80,12 +87,12 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
   @Override
   public MarkovNode<T> getChild(final T key)
   {
-    if (this.isPrefixTruncatable())
-      return new VirtualPrefixNode<T>(this.getPath().get(0), this.getFallback().getChild(key), this);
+    if (this.isPrefixTruncatable()) { return new VirtualPrefixNode(this
+        .getPath().get(0), this.getFallback().getChild(key), this); }
     MarkovNode<T> child = this.getChildren().get(key);
     if (null == child)
     {
-      synchronized (getRoot())
+      synchronized (this.getRoot())
       {
         child = this.getChildren().get(key);
         if (null == child)
@@ -100,12 +107,34 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
   @Override
   public NavigableMap<T, ? extends MarkovNode<T>> getChildren()
   {
-    if (this.isPrefixTruncatable() && getPath().size() < getModel().depth)
-      return Maps.transformValues(this.getFallback().getChildren(), (Function<MarkovNode<T>, MarkovNode<T>>) input -> {
-        final DataNode<T> parent = DataNode.this;
-        return new VirtualPrefixNode<T>(parent.getPath().get(0), input, parent);
-      });
-    else return Maps.unmodifiableNavigableMap(this.children);
+    if (this.isPrefixTruncatable())
+    {
+      return Maps.transformValues(this.getFallback().getChildren(),
+          new Function<MarkovNode<T>, MarkovNode<T>>() {
+            @Override
+            @Nullable
+            public MarkovNode<T> apply(@Nullable final MarkovNode<T> input)
+            {
+              final DataNode<T> parent = DataNode.this;
+              return new VirtualPrefixNode(
+                  parent.getPath().get(0),
+                  input,
+                  parent);
+            }
+          });
+    }
+    else
+    {
+      return Maps.unmodifiableNavigableMap(Maps.transformValues(this.children,
+          new Function<DataNode<T>, MarkovNode<T>>() {
+            @Override
+            @Nullable
+            public MarkovNode<T> apply(@Nullable final DataNode<T> input)
+            {
+              return input;
+            }
+          }));
+    }
   }
   
   @Override
@@ -117,23 +146,21 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
       {
         if (null == this.fallback)
         {
-          final MarkovPath<T> path = getPath();
-          if (null == path || 0 == path.size())
+          MarkovPath<T> path = getPath();
+          if(null == path || 0 == path.size())
+          {
             return null;
-          else if (1 == path.size())
+          }
+          else if(1 == path.size())
           {
             this.fallback = getParent();
-          } else
+          }
+          else
           {
-            final DataNode<T> parent = this.getParent();
-            final DataNode<T> parentFallback = parent.getFallback();
-            if (null != parentFallback)
+            final MarkovNode<T> f = this.getParent().getFallback().getChild(this.getKey());
+            if (f instanceof DataNode)
             {
-              final MarkovNode<T> f = parentFallback.getChild(this.getKey());
-              if (f instanceof DataNode)
-              {
-                this.fallback = (DataNode<T>) f;
-              }
+              this.fallback = (DataNode<T>) f;
             }
           }
         }
@@ -190,7 +217,7 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
     this.nodeCount++;
     if (null != this.getParent())
     {
-      this.getParent().incrementNodeCount();
+      ((DataNode<T>) this.getParent()).incrementNodeCount();
     }
   }
   
@@ -210,7 +237,8 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
   protected void initFallbackIndex()
   {
     final T key = this.getKey();
-    for (final MarkovNode<T> uncle : this.getParent().getFallbackChildren().values())
+    for (final MarkovNode<T> uncle : this.getParent()
+        .getFallbackChildren().values())
     {
       final MarkovNode<T> child = uncle.getChildren().get(key);
       if (null != child && child instanceof DataNode)
@@ -222,13 +250,10 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
   
   protected boolean isPrefixTruncatable()
   {
-    if (!this.getModel().dedupPrefix)
-      return false;
+    if (!this.getModel().dedupPrefix) { return false; }
     final MarkovNode<T> fallback = this.getFallback();
-    if (null == fallback)
-      return false;
-    if (this == fallback)
-      return false;
+    if (null == fallback) { return false; }
+    if (this == fallback) { return false; }
     return 1 == fallback.getFallbackChildren().size();
   }
   
@@ -237,7 +262,9 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
     final DataNode<T> child = new DataNode<T>(this, key);
     final MarkovNode<T> oldChild = this.children.put(key, child);
     if (null != oldChild)
+    {
       return oldChild;
+    }
     else
     {
       child.initFallbackIndex();
@@ -256,8 +283,7 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
   public MarkovNode<T> removeChild(final MarkovNode<T> child)
   {
     final MarkovNode<T> childCheck = this.children.get(child.getKey());
-    if (childCheck != child)
-      return null;
+    if (childCheck != child) { return null; }
     return this.children.remove(child.getKey());
   }
   
@@ -274,7 +300,8 @@ public final class DataNode<T extends Comparable<T>> extends MarkovNode<T>
     for (final Entry<T, DataNode<T>> e : this.children.entrySet())
     {
       sb.append("\n  ");
-      sb.append(String.format("\"%s\" = %s", MarkovPath.format(e.getKey()), e.getValue().toStringTree().replaceAll("\n", "\n  ")));
+      sb.append(String.format("\"%s\" = %s", MarkovPath.format(e.getKey()), e.getValue()
+          .toStringTree().replaceAll("\n", "\n  ")));
     }
     return sb.toString();
   }
