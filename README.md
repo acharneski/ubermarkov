@@ -17,4 +17,23 @@ Essentially, it models a markov tree as a series of 1-level-shallower trees, whi
 
 ## Running it
 
-The 
+The project can be run via junit tests, for example a benchmark test run against a [git repository](https://github.com/acharneski/ubermarkov/blob/5f2361f90e9282a0ba4a5373489060268810bddc/src/test/java/com/simiacryptus/markov/MarkovTest.java#L266) or a [wikipedia dump](https://github.com/acharneski/ubermarkov/blob/5f2361f90e9282a0ba4a5373489060268810bddc/src/test/java/com/simiacryptus/markov/MarkovTest.java#L55).
+
+Example output looks like:
+
+```
+Studying f9797cafd33accd73b7b2b622cf2d73e5fc470da/src/com/esotericsoftware/kryo/Generics.java
+Compressing f9797cafd33accd73b7b2b622cf2d73e5fc470da/src/com/esotericsoftware/kryo/Generics.java (3255 bytes)...613 bytes (81.167%)...verified!
+Markov chain compressed to 2092 bytes...verified markov tree encoding!
+Studying f9797cafd33accd73b7b2b622cf2d73e5fc470da/src/com/esotericsoftware/kryo/Kryo.java
+Compressing f9797cafd33accd73b7b2b622cf2d73e5fc470da/src/com/esotericsoftware/kryo/Kryo.java (55701 bytes)...12968 bytes (76.719%)...verified!
+Markov chain compressed to 5390 bytes...verified markov tree encoding!
+```
+
+This says that each blob, i.e. Kryo.java, was compressed from 55KB to 12.9KB, or 76% space reduction. Additionally, the dictionary that is being (cumulatively) used was encoded in 5KB. 
+
+In this benchmark the dictionary is shared and thus the cost of encoding it for benchmark purposes could be shared, but even counting the dictionary and this single item, the encoding is only 18k to compress 55k, or 3x compression. Other settings, with other datasets, yield much higher results. Overall, the compression performance of this method appears to be quite good. However, other characteristics such as memory use and cpu cost, will likely prohibit this from being a directly popular method.
+
+## See also
+
+1. https://github.com/acharneski/lztree - Another compression-related research project 
